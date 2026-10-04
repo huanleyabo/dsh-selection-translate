@@ -1,0 +1,65 @@
+{
+  "name": "dsh-selection-translate",
+  "version": "0.1.0",
+  "description": "DSH 划词翻译：在客户端内选中任意文字后，一键调用当前会话模型（或任意 OpenAI 兼容端点）翻译，结果就地弹出。 · Select-to-translate for DeepSeek Harness: select any text in the client and translate it in place with your current session model.",
+  "type": "module",
+  "main": "lib/index.js",
+  "icon": "icon.svg",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "engines": {
+      "dsh": ">=0.2.0-rc.1"
+    },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-ui-slots"
+      ]
+    }
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "icon.svg",
+    "README.md",
+    "README.en.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "deepseek",
+    "cordis",
+    "translate",
+    "translation",
+    "selection",
+    "划词翻译"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/huanleyabo/dsh-selection-translate.git"
+  },
+  "homepage": "https://github.com/huanleyabo/dsh-selection-translate#readme",
+  "bugs": {
+    "url": "https://github.com/huanleyabo/dsh-selection-translate/issues"
+  },
+  "author": "huanleyabo",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "test": "node test/host.test.mjs && node test/client.test.mjs"
+  }
+}

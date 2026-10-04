@@ -1,0 +1,19 @@
+# 依赖与构建产物
+node_modules/
+*.tgz
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 本地日志
+*.log
+npm-debug.log*
+
+# 测试临时产物
+coverage/

@@ -1,0 +1,6 @@
+url: https://github.com/huanleyabo/dsh-selection-translate
+name: huanleyabo/dsh-selection-translate
+category: ui
+description:
+  en: 'Select any text inside the DSH client and a small 译 button floats up next to the selection; one click translates it in place through the Host-side llm service, so it reuses your current session model with no extra API key. Results appear in a viewport-aware popover with one-click copy, a row of language chips for instant retranslation, smart zh⇄en by default, and an optional OpenAI-compatible endpoint. API keys stay Host-side and never reach the browser.'
+  zh: '在 DSH 客户端里选中任意文字，选区旁就会浮出一个「译」按钮；点一下即就地翻译，走 Host 端 llm 服务直接复用当前会话模型，无需另配 API Key。结果在自动避让屏幕边缘的浮层中展示，支持一键复制、一排语言胶囊即时切换重译，默认智能中英互译，也可切到任意 OpenAI 兼容端点。API Key 只留在 Host 端，永不下发浏览器。'

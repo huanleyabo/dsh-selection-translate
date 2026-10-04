@@ -1,0 +1,18 @@
+# Keep plugin sources byte-stable across platforms: the Host half and the
+# browser bundle are read and served verbatim, so normalization must not rewrite them.
+* text=auto eol=lf
+*.js text eol=lf
+*.mjs text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.md text eol=lf
+*.svg text eol=lf
+LICENSE text eol=lf
+
+# Binary
+*.tgz binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary

@@ -1,0 +1,5 @@
+# Bundle patch for dsh-selection-translate.
+# Installed as a profile bundle layer via the `dsh.bundle.patch` manifest field.
+- insert:
+    - id: dsh-selection-translate
+      name: dsh-selection-translate
