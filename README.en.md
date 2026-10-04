@@ -12,7 +12,7 @@ By default it **reuses the model your current session is already using** (throug
 
 | Feature | Description |
 | --- | --- |
-| Selection trigger | Select text with the mouse (inputs, chat transcript, tool output, document preview) and a **译** button floats next to the selection |
+| Selection trigger | Select text with the mouse (inputs, textareas, chat transcript, tool output) and a **译** button floats next to the selection |
 | One-click translate | Calls the model and shows the result in a popover anchored to the selection |
 | Smart placement | The popover avoids screen edges and flips above / clamps into view when space runs out |
 | Target language | A row of language chips retranslates instantly to another language |
@@ -109,6 +109,13 @@ Translation failures come back as `{ ok: false, error }` with HTTP 200 so the UI
 | `shell.overlay` | Frame-wide floating layer: the **译** button and the result popover (`replaceRisk: none`, purely additive) |
 | `settings.general.item` | The General-settings preference row; **the full configuration lives here**, so it is always reachable |
 | `settings.plugin.item` | Optional Plugins-page card; some compositions do not declare this seat, in which case registration only warns and nothing else is affected |
+
+## Known boundaries
+
+- **Text inside iframes is not covered.** HTML document previews (`iframe[data-html-preview]`), sidebar browser pages and similar live in separate documents, so the parent page's `getSelection()` cannot see a selection made there and no button appears. The selection listener is attached to the main document only.
+- The selection listener is built on `selectionchange` + `mouseup`/`keyup`: `contenteditable` (such as the Composer) goes through the standard `window.getSelection()` path, while native `INPUT`/`TEXTAREA` go through `selectionStart`/`End`.
+- `provider: "current"` needs the host `llm` and `sessions` services; when they are missing it reports a clear error instead of failing silently.
+- A custom endpoint must speak the OpenAI-compatible `chat/completions` protocol.
 
 ## Tests
 

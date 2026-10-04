@@ -10,7 +10,7 @@
 
 | 能力 | 说明 |
 | --- | --- |
-| 划词触发 | 鼠标选中文字（含输入框、聊天记录、工具输出、文档预览）后，选区旁浮出「译」按钮 |
+| 划词触发 | 鼠标选中文字（输入框、文本域、聊天记录、工具输出）后，选区旁浮出「译」按钮 |
 | 一键翻译 | 点击后调用模型，结果在选区旁的浮层内展示 |
 | 就近弹出 | 浮层自动避开屏幕边缘，超出视口时自动上翻 / 收进可视区 |
 | 指定语言 | 浮层底部一排语言胶囊可即时切换目标语言并重译 |
@@ -138,7 +138,8 @@ Host 端覆盖：配置读写与钳位、密钥不下发、损坏配置降级、
 
 ## 已知边界
 
-- 选区监听基于 `selectionchange` + `mouseup`/`keyup`，个别自绘编辑器若不派发标准选区事件则不会触发；此时可用输入框内的划词（`INPUT`/`TEXTAREA` 走 `selectionStart/End`，已被显式支持）。
+- **不覆盖 iframe 内的文字。** 文档预览里的 HTML 页（`iframe[data-html-preview]`）、侧栏浏览器页等位于独立文档，父页面的 `getSelection()` 取不到其中的选区，因此这些区域划词不会弹出按钮。本插件的选区监听只挂在主文档上。
+- 选区监听基于 `selectionchange` + `mouseup`/`keyup`；`contenteditable`（如 Composer 输入框）走标准 `window.getSelection()` 路径，原生 `INPUT`/`TEXTAREA` 走 `selectionStart/End` 路径。
 - `provider: "current"` 依赖 Host 端 `llm` 与 `sessions` 服务在场；缺失时会给出明确报错而不是静默失败。
 - 自定义端点必须是 OpenAI 兼容的 `chat/completions` 协议。
 
