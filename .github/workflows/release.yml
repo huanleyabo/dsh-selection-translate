@@ -1,0 +1,53 @@
+name: Release Package
+
+# Produces the prebuilt tarball the plugin market can hand users, so they
+# install without pnpm's build-approval step (allowBuilds).
+#
+# Note on the asset name: this workflow intentionally renames the tarball to a
+# VERSION-FREE name. A `releases/latest/download/<file>` URL resolves `latest`
+# at request time but takes the filename literally, so a versioned asset name
+# would 404 the moment the next release is cut. Keep it version-free.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Verify the package before releasing
+        run: |
+          node --check lib/index.js
+          node --check lib/client.js
+          node test/host.test.mjs
+          node test/client.test.mjs
+
+      - name: Build the release tarball
+        run: |
+          npm pack
+          PACKED=$(ls dsh-selection-translate-*.tgz | head -n 1)
+          # Version-free asset name: see the note at the top of this file.
+          mv "$PACKED" dsh-selection-translate.tgz
+          echo "Asset: dsh-selection-translate.tgz ($(du -h dsh-selection-translate.tgz | cut -f1))"
+          echo "SHA256: $(sha256sum dsh-selection-translate.tgz | cut -d' ' -f1)"
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          files: dsh-selection-translate.tgz
+          generate_release_notes: true
