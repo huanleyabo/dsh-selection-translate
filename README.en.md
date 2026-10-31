@@ -13,6 +13,7 @@ By default it **reuses the model your current session is already using** (throug
 | Feature | Description |
 | --- | --- |
 | Selection trigger | Select text with the mouse (inputs, textareas, chat transcript, tool output) and a **译** button floats next to the selection |
+| Touch layout | On a finger-driven device the button moves **below the selection, centred** — clear of the hand still resting on the text — and grows to a 34px target |
 | One-click translate | Calls the model and shows the result in a popover anchored to the selection |
 | Smart placement | The popover avoids screen edges and flips above / clamps into view when space runs out |
 | Target language | A row of language chips retranslates instantly to another language |

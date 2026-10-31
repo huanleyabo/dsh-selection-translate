@@ -301,11 +301,18 @@ const documentStub = {
 
 let fakeSelection = null;
 
+/** Mutable viewport/capability so tests can act as a phone or a mouse desktop. */
+const viewport = { innerWidth: 1200, innerHeight: 800, coarse: false };
+
 const windowStub = {
   React,
-  innerWidth: 1200,
-  innerHeight: 800,
+  get innerWidth() { return viewport.innerWidth; },
+  get innerHeight() { return viewport.innerHeight; },
   getSelection: () => fakeSelection,
+  matchMedia(query) {
+    const coarse = /coarse/.test(query);
+    return { matches: coarse ? viewport.coarse : !viewport.coarse, media: query };
+  },
   addEventListener(type, fn) {
     if (!windowListeners.has(type)) windowListeners.set(type, new Set());
     windowListeners.get(type).add(fn);
@@ -392,6 +399,12 @@ async function test(label, fn) {
   } catch (error) {
     failures.push({ label, error });
     console.log('  FAIL ' + label + '\n       ' + (error && error.message));
+  } finally {
+    // The viewport is shared state: a test that acts as a phone must not leak
+    // its coarse-pointer flag into the next one.
+    viewport.innerWidth = 1200;
+    viewport.innerHeight = 800;
+    viewport.coarse = false;
   }
 }
 
@@ -547,6 +560,114 @@ await test('shows the 译 button after a selection, and its click opens the popo
   assert.equal(call.body.text, 'Hello world');
   assert.equal(call.body.targetLang, 'auto');
   assert.equal(call.body.sessionId, 'sess-A', 'the active session id is forwarded');
+});
+
+/* ------------------------------------------------- touch layout (phones) */
+
+/** Position the trigger for one selection and return its computed style. */
+async function triggerStyleFor(rect, opts = {}) {
+  viewport.coarse = !!opts.coarse;
+  if (opts.innerWidth) viewport.innerWidth = opts.innerWidth;
+  if (opts.innerHeight) viewport.innerHeight = opts.innerHeight;
+
+  const { ctx, registrations } = makeCtx();
+  freshClient().apply(ctx);
+  const overlay = registrations.find((r) => r.meta.name === 'shell.overlay');
+  fakeSelection = null;
+  const container = mountSlot(overlay, { useSessions: sessionHook });
+  setFakeSelection('Hello', rect);
+  documentStub.dispatch('selectionchange');
+  await sleep(200);
+  renderPass();
+  const trigger = findByClass(container, 'dsh-st-trigger');
+  assert.ok(trigger, 'trigger rendered');
+  return { style: trigger.props.style, trigger };
+}
+
+await test('on a coarse pointer the button sits below the text, centred on it', async () => {
+  const rect = { left: 100, top: 300, right: 300, bottom: 318, width: 200, height: 18 };
+  const { style, trigger } = await triggerStyleFor(rect, { coarse: true });
+  const top = parseFloat(style.top);
+  const left = parseFloat(style.left);
+  // Below the selection, not overlapping the text.
+  assert.ok(top >= rect.bottom, `top ${top} should be at or below bottom ${rect.bottom}`);
+  // Centred horizontally on the selection.
+  assert.equal(left, rect.left + rect.width / 2);
+  // Centring is a class, not an inline transform: an inline one would win over
+  // the :hover rule and silently break the hover lift.
+  assert.equal(style.transform, undefined, 'no inline transform');
+  assert.match(String(trigger.className), /dsh-st-trigger--center/);
+});
+
+await test('on a fine pointer the button keeps the old beside-the-text placement', async () => {
+  const rect = { left: 100, top: 300, right: 300, bottom: 318, width: 200, height: 18 };
+  const { style, trigger } = await triggerStyleFor(rect, { coarse: false, innerWidth: 1200 });
+  assert.equal(parseFloat(style.left), rect.right + 6, 'still to the right of the selection');
+  assert.equal(parseFloat(style.top), rect.top - 32, 'still above the selection line');
+  assert.doesNotMatch(String(trigger.className), /--center/, 'no centring class on desktop');
+});
+
+await test('the centring class composes with the hover lift', () => {
+  const { ctx } = makeCtx();
+  freshClient().apply(ctx);
+  const style = documentStub.head.children.filter((n) => n.tagName === 'STYLE').pop();
+  const css = style.textContent;
+  assert.match(css, /\.dsh-st-trigger--center\{transform:translateX\(-50%\)\}/);
+  // The hover rule must keep the X centring rather than replace it.
+  assert.match(css, /\.dsh-st-trigger--center:hover\{transform:translateX\(-50%\) translateY\(-1px\)\}/);
+});
+
+await test('a narrow viewport falls back to touch layout without matchMedia', async () => {
+  const rect = { left: 40, top: 200, right: 240, bottom: 218, width: 200, height: 18 };
+  viewport.coarse = false;
+  viewport.innerWidth = 380; // phone-ish width
+  viewport.innerHeight = 700;
+
+  const { ctx, registrations } = makeCtx();
+  freshClient().apply(ctx);
+  const overlay = registrations.find((r) => r.meta.name === 'shell.overlay');
+  fakeSelection = null;
+  const container = mountSlot(overlay, { useSessions: sessionHook });
+  // Drop matchMedia to prove the width fallback is what decides.
+  const savedMatchMedia = windowStub.matchMedia;
+  delete windowStub.matchMedia;
+  try {
+    setFakeSelection('Hello', rect);
+    documentStub.dispatch('selectionchange');
+    await sleep(200);
+    renderPass();
+  } finally {
+    windowStub.matchMedia = savedMatchMedia;
+  }
+  const trigger = findByClass(container, 'dsh-st-trigger');
+  assert.ok(trigger, 'trigger rendered');
+  assert.ok(parseFloat(trigger.props.style.top) >= rect.bottom, 'placed below the text');
+  assert.match(String(trigger.className), /dsh-st-trigger--center/, 'centred like the coarse-pointer path');
+});
+
+await test('touch placement near the left/right edge stays fully on screen', async () => {
+  // A selection hugging the left edge: centring it must not push the button off.
+  const rect = { left: 0, top: 300, right: 20, bottom: 318, width: 20, height: 18 };
+  const { style } = await triggerStyleFor(rect, { coarse: true, innerWidth: 360 });
+  const left = parseFloat(style.left);
+  assert.ok(left >= 8, `left ${left} must stay on screen`);
+  assert.ok(left <= 360 - 8, `left ${left} must stay within the viewport`);
+});
+
+await test('touch placement flips above the selection when it would fall off the bottom', async () => {
+  const rect = { left: 100, top: 760, right: 300, bottom: 778, width: 200, height: 18 };
+  const { style } = await triggerStyleFor(rect, { coarse: true, innerHeight: 800 });
+  const top = parseFloat(style.top);
+  assert.ok(top < rect.top, `top ${top} should flip above the selection at ${rect.top}`);
+  assert.ok(top >= 0, 'and stay on screen');
+});
+
+await test('the stylesheet carries a coarse-pointer rule for a finger-sized target', () => {
+  const { ctx } = makeCtx();
+  freshClient().apply(ctx);
+  const style = documentStub.head.children.filter((n) => n.tagName === 'STYLE').pop();
+  assert.match(style.textContent, /pointer:coarse/);
+  assert.match(style.textContent, /\.dsh-st-trigger\{height:34px/);
 });
 
 await test('renders a loading state before the model answers', async () => {

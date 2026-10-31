@@ -1,6 +1,6 @@
 {
   "name": "dsh-selection-translate",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "DSH 划词翻译：在客户端内选中任意文字后，一键调用当前会话模型（或任意 OpenAI 兼容端点）翻译，结果就地弹出。 · Select-to-translate for DeepSeek Harness: select any text in the client and translate it in place with your current session model.",
   "type": "module",
   "main": "lib/index.js",
